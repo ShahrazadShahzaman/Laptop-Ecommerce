@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { product } from "./ProductPage";
+import { dummyProducts } from "./ProductPage";
 import ProductCard from "../Components/ProductCard";
 import { motion } from "framer-motion";
 import { fadeUp } from "../Animations/Variants";
@@ -7,8 +7,8 @@ import { fadeUp } from "../Animations/Variants";
 const CategoryPage = () => {
   const { categoryName } = useParams();
 
-  const filteredProducts = product.filter(
-    (product) => product.category.toLowerCase() === categoryName.toLowerCase()
+  const filteredProducts = dummyProducts.filter(
+    (dummyProducts) => dummyProducts.category.toLowerCase() === categoryName.toLowerCase()
   );
 
   return (

@@ -1,15 +1,25 @@
 import { useState } from "react";
 import { Menu, X, ChevronDown, ShoppingCart } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../Context/CartContext";
+import { useAuth } from "../Context/AuthContext";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showMobileDropdown, setShowMobileDropdown] = useState(false);
   const { cartItems } = useCart();
+  const { user, logout: authLogout } = useAuth();
   const totalQuantity = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  const navigate = useNavigate();
+
+  const logout = () => {
+    authLogout();
+     setIsOpen(false);
+    navigate("/");
+  };
 
   return (
     <>
@@ -89,6 +99,33 @@ const Header = () => {
               )}
             </Link>
 
+            {!user ? (
+              <>
+                <Link
+                  to="/login"
+                  className="hidden md:inline border border-[#75E2FF] text-[#75E2FF] px-4 py-1.5 rounded-md hover:bg-blue-500 hover:text-gray-50 hover:scale-110 transition"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="hidden md:inline bg-[#75E2FF] text-[#244D61] px-4 py-1.5 rounded-md hover:bg-blue-500 hover:text-gray-50 hover:scale-110 transition"
+                >
+                  Register
+                </Link>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={logout}
+                  className="hidden md:inline text-red-400 hover:text-red-500 transition"
+                >
+                  Logout
+                </button>
+              </>
+            )}
+
+            {/* Mobile Toggle */}
             <button
               className="md:hidden text-white"
               onClick={() => setIsOpen((prev) => !prev)}
@@ -166,6 +203,32 @@ const Header = () => {
                     </span>
                   )}
                 </Link>
+                {!user ? (
+                  <div className="flex flex-col items-center space-y-4 pt-4 border-t border-white/20 w-full">
+                    <Link
+                      to="/login"
+                      className="text-center border border-[#75E2FF] text-[#75E2FF] px-4 py-2 rounded-md hover:bg-[#75E2FF] hover:text-[#244D61] transition w-[80%] max-w-[250px]"
+                    >
+                      Login
+                    </Link>
+
+                    <Link
+                      to="/register"
+                      className="text-center bg-[#75E2FF] text-[#244D61] px-4 py-2 rounded-md hover:bg-[#5cd6f5] transition w-[80%] max-w-[250px]"
+                    >
+                      Register
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center space-y-4 pt-4 border-t border-white/20 w-full">
+                    <button
+                      onClick={logout}
+                      className="w-full text-center text-red-400 hover:text-red-500 transition"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}

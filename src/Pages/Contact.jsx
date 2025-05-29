@@ -58,6 +58,7 @@ const ContactUs = () => {
                 type="text"
                 placeholder="Your Name"
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#244D61] focus:outline-none"
+                required
               />
 
               <motion.input
@@ -65,6 +66,7 @@ const ContactUs = () => {
                 type="email"
                 placeholder="Your Email"
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#244D61] focus:outline-none"
+                required
               />
 
               <motion.textarea
@@ -72,6 +74,7 @@ const ContactUs = () => {
                 placeholder="Your Message"
                 rows="4"
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#244D61] focus:outline-none"
+                required
               />
 
               <motion.button

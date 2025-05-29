@@ -5,9 +5,13 @@ import { motion } from "framer-motion";
 import { CheckCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import { zoomIn } from "../Animations/Variants";
+import { db } from "../firebase/firebaseconfig";
+import { collection,addDoc, Timestamp } from "firebase/firestore";
+
 
 const CheckoutPage = () => {
-  const { clearCart } = useCart();
+
+  const {cartItems, clearCart } = useCart();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
@@ -21,22 +25,60 @@ const CheckoutPage = () => {
   };
 
   //   Form Submission Handler
-  const handleSubmit = (e) => {
-    e.preventDefault();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (cartItems.length === 0) {
+    toast.error("Your cart is empty!");
+    return;
+  }
+
+  try {
+    const totalAmount = cartItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    // 1. Add Order to Firestore and store its reference
+    const orderRef = await addDoc(collection(db, "orders"), {
+      userName: formData.name,
+      userEmail: formData.email,
+      address: formData.address,
+      items: cartItems.map((item) => ({
+        productName: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      totalAmount,
+      status: "pending",
+      createdAt: Timestamp.now(),
+    });
+
+    // 2. Send a notification with the orderId
+    await addDoc(collection(db, "notifications"), {
+      title: "🛒 New Order Received",
+      message: `New order from ${formData.name} (${formData.email})`,
+      type: "order",
+      orderId: orderRef.id, // this is now available
+      timestamp: Timestamp.now(),
+    });
+
+    // 3. Show success, clear cart and navigate
     toast.success("Order placed successfully!", {
       position: "top-right",
       autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
       theme: "colored",
     });
+
     setSubmitted(true);
     clearCart();
     setTimeout(() => navigate("/"), 3000);
-  };
+  } catch (error) {
+    console.error("Order submission failed:", error);
+    toast.error("Failed to place order. Try again.");
+  }
+};
+
 
   return (
     <>

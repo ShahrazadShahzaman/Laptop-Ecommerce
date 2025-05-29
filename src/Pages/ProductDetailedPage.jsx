@@ -1,6 +1,10 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { db } from "../firebase/firebaseconfig";
+import { ChevronLeft, ChevronRight, ShoppingCart, Star } from "lucide-react";
+import { useCart } from "../Context/CartContext";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import Product1 from "../assets/product1.jpeg";
 import Product1c from "../assets/product1c.jpg";
 import Product1s from "../assets/product1s.jpg";
@@ -40,8 +44,8 @@ import Product11s from "../assets/product11s.jpg";
 import Product12 from "../assets/product12.jpg";
 import Product12c from "../assets/product12c.jpg";
 import Product12s from "../assets/product12s.jpg";
-import { ChevronLeft, ChevronRight, ShoppingCart, Star } from "lucide-react";
-import { useCart } from "../Context/CartContext";
+import ProductReviews from "./productreviews";
+import SubmitReview from "./submitreviews";
 
 // Dummy Data For Products
 export const productList = [
@@ -113,7 +117,7 @@ export const productList = [
   {
     id: 6,
     name: "Asus TUF Gaming A15",
-    price:899,
+    price: 899,
     images: [Product6, Product6b, Product6s],
     description:
       "Built for endurance and gaming with military-grade durability.",
@@ -163,7 +167,7 @@ export const productList = [
   {
     id: 10,
     name: "LG Gram 16",
-    price:1149,
+    price: 1149,
     images: [Product10, Product10b, Product10s],
     description:
       "Extremely lightweight with long battery life — ideal for travel.",
@@ -176,7 +180,7 @@ export const productList = [
   {
     id: 11,
     name: "Samsung Galaxy Book3 Pro",
-    price:1299,
+    price: 1299,
     images: [Product11, Product11b, Product11s],
     description:
       "Gorgeous AMOLED display with seamless Samsung ecosystem integration.",
@@ -189,7 +193,7 @@ export const productList = [
   {
     id: 12,
     name: "Alienware x15 R2",
-    price:2199,
+    price: 2199,
     images: [Product12, Product12c, Product12s],
     description:
       "Ultra-thin high-performance gaming laptop with cutting-edge thermal design.",
@@ -228,22 +232,23 @@ const dummyReviews = [
 ];
 
 const ProductDetailedPage = () => {
-
   const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const {addToCart} = useCart();
+  const { addToCart } = useCart();
 
+  const [reviews, setReviews] = useState([]);
 
   // Cart Handling
-const handleAddToCart =()=>{
-  addToCart({
+  const handleAddToCart = () => {
+    addToCart({
       ...product,
-      image: product.images[0]
+      image: product.images[0],
     });
-  navigate("/cart");
-}
+    navigate("/cart");
+  };
 
   const fadeUp = {
     hidden: { opacity: 0, y: 40 },
@@ -254,15 +259,84 @@ const handleAddToCart =()=>{
     },
   };
 
-  useEffect(() => {
-    const foundProduct = productList.find((p) => p.id === parseInt(id));
-    setProduct(foundProduct);
-    if (foundProduct) {
-      setCurrentImageIndex(0);
+  const fetchProductReviews = async (productId) => {
+    try {
+      const q = query(
+        collection(db, "reviews"),
+        where("productId", "==", productId)
+      );
+      const querySnapshot = await getDocs(q);
+      const fetchedReviews = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setReviews(fetchedReviews);
+    } catch (error) {
+      console.error("Failed to fetch reviews:", error);
     }
-  }, [id]);
+  };
 
-  if (!product) return <div className="p-6">Loading...</div>;
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const q = query(
+          collection(db, "products"),
+          where("__name__", "==", id)
+        );
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          const doc = snapshot.docs[0];
+          const data = doc.data();
+          const fetchedProduct = {
+            id: doc.id,
+            name: data.name,
+            price: data.price,
+            discount: data.discount ?? 0,
+            description: data.description,
+            specs: data.specs || {},
+            images: data.images || [data.imageURL || data.image],
+          };
+          setProduct(fetchedProduct);
+          await fetchProductReviews(fetchedProduct.id);
+        } else {
+          const dummy = productList.find((p) => p.id.toString() === id);
+          if (dummy) {
+            setProduct(dummy);
+            await fetchProductReviews(dummy.id.toString());
+          } else {
+            navigate("/products");
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching product:", err);
+        navigate("/products");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [id, navigate]);
+
+  if (loading) {
+    return <span class="loader"></span>;
+  }
+
+  if (!product) {
+    return <div className="text-center mt-20">Product not found.</div>;
+  }
+
+  const handlePrev = () => {
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? product.images.length - 1 : prev - 1
+    );
+  };
+
+  const handleNext = () => {
+    setCurrentImageIndex((prev) =>
+      prev === product.images.length - 1 ? 0 : prev + 1
+    );
+  };
   return (
     <>
       <motion.h2
@@ -333,7 +407,19 @@ const handleAddToCart =()=>{
             <h1 className="text-3xl font-bold text-[#244D61]">
               {product.name}
             </h1>
-            <p className="text-xl text-[#5689C0] mt-2">{product.price}</p>
+            <p className="text-xl text-[#5689C0]  mt-2">${product.price}</p>
+            {product.discount > 0 && (
+              <>
+                <p className="text-sm text-green-600 mt-1">
+                  Discount: {product.discount}%
+                </p>
+                <p className="text-md text-red-600 font-bold mt-1">
+                  After Discount: $
+                  {(product.price * (1 - product.discount / 100)).toFixed(2)}
+                </p>
+              </>
+            )}
+
             <p className="text-gray-700 mt-4">{product.description}</p>
 
             <ul className="mt-6 text-sm text-gray-600 space-y-1">
@@ -343,53 +429,17 @@ const handleAddToCart =()=>{
             </ul>
             {/* Add To Cart */}
             <motion.button
-              whileTap={{ scale: 0.95 }} onClick={handleAddToCart}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleAddToCart}
               className="mt-6 bg-[#5689C0] hover:bg-[#75E2FF] text-white hover:text-[#244D61] font-semibold px-8 py-3 rounded-full shadow-md flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-lg hover:scale-105 hover:ring-2 hover:ring-[#75E2FF] active:scale-95"
             >
               <ShoppingCart className="w-5 h-5" />
               Add to Cart
             </motion.button>
           </div>
+          <ProductReviews productId={product.id} />
+          {/* <SubmitReview productId={product.id}/> */}
         </motion.div>
-
-        {/* Reviews */}
-        <div className="mt-10">
-          <h2 className="text-xl font-semibold text-[#244D61] mb-4">
-            Customer Reviews
-          </h2>
-          <div className="grid gap-4">
-            {dummyReviews.map((review) => (
-              <motion.div
-                key={review.id}
-                variants={fadeUp}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 1.9 }}
-                className="bg-white shadow-md p-5 rounded-xl hover:shadow-xl transition hover:scale-105  duration-300"
-              >
-                <div className="flex items-start justify-between">
-                  <h4 className="font-semibold text-lg text-[#244D61]">
-                    {review.name}
-                  </h4>
-
-                  <div className="flex gap-1 text-yellow-500">
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <Star
-                        key={i}
-                        size={16}
-                        fill={i < review.rating ? "#FACC15" : "none"}
-                        stroke="#FACC15"
-                      />
-                    ))}
-                  </div>
-                </div>
-                <p className="mt-2 text-gray-700">{review.comment}</p>
-                <p className="text-sm text-gray-500 mt-1">{review.date}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
       </section>
     </>
   );

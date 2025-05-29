@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { staggerContainer, fadeUpStaggered, fadeIn, fadeUp } from "../../Animations/Variants";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { product } from "../ProductPage";
+import { dummyProducts } from "../ProductPage";
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 
@@ -51,7 +51,7 @@ const TopSelling = () => {
             ref={scrollRef}
             className="flex overflow-x-auto gap-6 px-4 scroll-smooth snap-x snap-mandatory no-scrollbar overflow-visible"
           >
-            {product.slice(0, 6).map((item) => (
+            {dummyProducts.slice(0, 6).map((item) => (
               <motion.div
               key={item.id}
               variants={fadeUpStaggered}

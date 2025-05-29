@@ -2,14 +2,24 @@ import { Star } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const ProductCard = ({ product }) => {
-  // ProductCard Start
+  const imageUrl =
+    product.image ||
+    (product.images && product.images[0]) ||
+    "https://via.placeholder.com/300x200?text=No+Image";
+
+  const hasDiscount = product.discount && product.discount > 0;
+  const discountedPrice = hasDiscount
+    ? product.discountType === "percentage"
+      ? product.price - (product.price * product.discount) / 100
+      : product.price - product.discount
+    : product.price;
+
   return (
-    <>
-     <div className="group rounded-xl overflow-hidden transition-transform duration-300 bg-white shadow-md hover:shadow-lg transform hover:-translate-y-1 hover:scale-[1.09]">
+    <div className="group rounded-xl overflow-hidden transition-transform duration-300 bg-white shadow-md hover:shadow-lg transform hover:-translate-y-1 hover:scale-[1.09]">
       <div className="flex flex-col justify-between h-full p-3 text-center">
         <Link to={`/product/${product.id}`}>
           <img
-            src={product.image}
+            src={imageUrl}
             alt={product.name}
             className="w-full h-32 object-contain mb-3 transition-transform duration-300 group-hover:scale-125"
           />
@@ -23,8 +33,19 @@ const ProductCard = ({ product }) => {
             <span className="text-sm text-gray-700">{product.rating}</span>
           </div>
 
-          <div className="mt-1 text-[#5689C0] font-semibold text-md">
-            ${product.price}
+          <div className="mt-1 font-semibold text-md">
+            {hasDiscount ? (
+              <div>
+                <span className="text-gray-400 line-through mr-2">
+                  ${product.price.toFixed(2)}
+                </span>
+                <span className="text-red-600">
+                  ${discountedPrice.toFixed(2)}
+                </span>
+              </div>
+            ) : (
+              <span className="text-[#5689C0]">${product.price.toFixed(2)}</span>
+            )}
           </div>
         </Link>
 
@@ -36,7 +57,7 @@ const ProductCard = ({ product }) => {
         </Link>
       </div>
     </div>
-    </>
   );
 };
+
 export default ProductCard;

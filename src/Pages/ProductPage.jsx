@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase/firebaseconfig";
 import { motion } from "framer-motion";
 import Product1 from "../assets/product1.jpeg";
 import Product2 from "../assets/product2.jpg";
@@ -14,11 +16,10 @@ import Product11 from "../assets/product11.jpg";
 import Product12 from "../assets/product12.jpg";
 import ProductCard from "../Components/ProductCard";
 import PageBanner from "../Components/PageBanner";
-
-
+import { Link } from "react-router-dom";
 
 // Dummy Data
-export const product = [
+export const dummyProducts = [
   {
     id: 1,
     name: "Acer Nitro 5",
@@ -129,11 +130,34 @@ export const product = [
   },
 ];
 
-
 const ProductList = () => {
   const [sort, setSort] = useState("default");
+  const [products, setProducts] = useState([]);
+  console.log(products);
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, "products"));
+        const firebaseProducts = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            image: data.imageURL || data.image || "",
+          };
+        });
 
-  const sortedProducts = [...product].sort((a, b) => {
+        const merged = [...dummyProducts, ...firebaseProducts];
+        setProducts(merged);
+      } catch (err) {
+        console.error("Failed to fetch Firebase products:", err);
+        setProducts(dummyProducts);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  const sortedProducts = [...products].sort((a, b) => {
     if (sort === "priceLow") return a.price - b.price;
     if (sort === "priceHigh") return b.price - a.price;
     if (sort === "rating") return b.rating - a.rating;
@@ -142,16 +166,21 @@ const ProductList = () => {
 
   return (
     <>
-    <PageBanner title="Available Products" subtitle="Have a look at our products" />
+      <PageBanner
+        title="Available Products"
+        subtitle="Have a look at our products"
+      />
       <section className="py-16 px-4 bg-[#EAEBED] min-h-screen">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-10 gap-4">
-            <motion.h2  initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.9, ease: "easeOut" }}
-          viewport={{ once: true }}
-          className="text-3xl font-bold text-[#244D61] text-center w-full">
-                Our Laptops
+            <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.9, ease: "easeOut" }}
+              viewport={{ once: true }}
+              className="text-3xl font-bold text-[#244D61] text-center w-full"
+            >
+              Our Laptops
             </motion.h2>
             <select
               className="px-4 py-2 rounded bg-white border border-gray-300 text-sm self-center md:self-auto"
@@ -165,14 +194,18 @@ const ProductList = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-            {sortedProducts.map((product,i)=>(
-                <motion.div key={product.id}
+            {sortedProducts.map((product, i) => (
+              <motion.div
+                key={product.id}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}>
-                    <ProductCard product={product}/>
-                </motion.div>
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+              >
+                <Link to={`/product/${product.id}`}>
+                  <ProductCard product={product} />
+                </Link>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -180,4 +213,4 @@ const ProductList = () => {
     </>
   );
 };
-export default ProductList
+export default ProductList;

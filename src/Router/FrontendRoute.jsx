@@ -1,4 +1,3 @@
-import { Contact } from "lucide-react";
 import FrontendLayout from "../Layout";
 import AboutPage from "../Pages/About/index.jsx";
 import CartPage from "../Pages/CartPage.jsx";
@@ -8,6 +7,9 @@ import HomePage from "../Pages/Home";
 import ProductDetailedPage from "../Pages/ProductDetailedPage.jsx";
 import ProductList from "../Pages/ProductPage.jsx";
 import ContactUs from "../Pages/Contact.jsx";
+import Register from "../Pages/Auth/Register.jsx";
+import Login from "../Pages/Auth/Login.jsx";
+import ProtectedRoute from "./ProtectedRoute.jsx";
 
 const FrontendRoute = [
   {
@@ -20,23 +22,39 @@ const FrontendRoute = [
       },
       {
         path: "products",
-        element: <ProductList />,
+        element: (
+        <ProtectedRoute>
+        <ProductList />
+        </ProtectedRoute>
+        ),
       },
       {
         path: "product/:id",
-        element: <ProductDetailedPage />,
+        element: (
+        <ProtectedRoute>
+          <ProductDetailedPage />
+        </ProtectedRoute>),
       },
       {
         path: "cart",
-        element: <CartPage />,
+        element: (
+        <ProtectedRoute>
+          <CartPage />
+        </ProtectedRoute>),
       },
       {
         path: "checkout",
-        element: <CheckoutPage />,
+        element: (
+        <ProtectedRoute>
+          <CheckoutPage />
+        </ProtectedRoute>),
       },
       {
         path: "/products/:categoryName",
-        element: <CategoryPage />,
+        element: (
+        <ProtectedRoute>
+          <CategoryPage />
+        </ProtectedRoute>),
       },
       {
         path: "about",
@@ -45,6 +63,14 @@ const FrontendRoute = [
       {
         path: "contact",
         element: <ContactUs/>,
+      },
+      {
+        path: "Register",
+        element: <Register/>,
+      },
+      {
+        path: "Login",
+        element: <Login/>,
       },
 
     ],
